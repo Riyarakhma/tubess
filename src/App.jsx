@@ -2,7 +2,8 @@ import React, { useState } from 'react'
 import SplashScreen from './components/SplashScreen'
 import MapView from './components/MapView'
 import AIChat from './components/AIChat'
-import AILearningHub from './components/AILearningHub'
+import ReviewPage from './components/ReviewPage'
+import HaltePage from './components/HaltePage'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
@@ -23,7 +24,7 @@ function App() {
   const [editData, setEditData] = useState(userProfile)
 
   const busData = [
-    { id: 1, name: "Bus Dipyo 1", rute: "Terminal → FEB → Teknik → FSM", eta: 5, penumpang: 18, status: "Aktif", color: "#3B82F6" },
+    { id:  1, name: "Bus Dipyo 1", rute: "Terminal → FEB → Teknik → FSM", eta: 5, penumpang: 18, status: "Aktif", color: "#3B82F6" },
     { id: 2, name: "Bus Dipyo 2", rute: "Terminal → FISIP → Psikologi → Hukum", eta: 8, penumpang: 15, status: "Aktif", color: "#EF4444" },
     { id: 3, name: "Bus Dipyo 3", rute: "Terminal → FKM → FIB → Vokasi", eta: 12, penumpang: 12, status: "Aktif", color: "#10B981" },
     { id: 4, name: "Bus Dipyo 4", rute: "Terminal → Perikanan → Kedokteran", eta: 15, penumpang: 22, status: "Delay", color: "#F59E0B" }
@@ -44,11 +45,11 @@ function App() {
   }
 
   const handlePhotoChange = (e) => {
-    const file = e. target.files[0]
+    const file = e.target. files[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
-        setEditData({... editData, foto: e.target.result})
+        setEditData({...editData, foto: e.target.result})
       }
       reader.readAsDataURL(file)
     }
@@ -84,8 +85,8 @@ function App() {
               </div>
               
               <button 
-                onClick={() => setShowProfile(!showProfile)}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
+                onClick={() => setShowProfile(! showProfile)}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover: shadow-lg transition-all"
               >
                 <span className="text-sm">👤 Profile</span>
               </button>
@@ -94,7 +95,7 @@ function App() {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
+      {/* Navigation Tabs - USER FOKUS */}
       <div className="bg-white/60 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-8">
@@ -102,7 +103,7 @@ function App() {
               onClick={() => setActiveTab('map')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'map' 
-                ?   'border-blue-500 text-blue-600' 
+                ?  'border-blue-500 text-blue-600' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -114,8 +115,8 @@ function App() {
               onClick={() => setActiveTab('schedule')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'schedule' 
-                ?  'border-blue-500 text-blue-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-blue-500 text-blue-600' 
+                : 'border-transparent text-gray-500 hover: text-gray-700'
               }`}
             >
               <div className="text-sm font-medium">📅 Jadwal & Rute</div>
@@ -123,15 +124,27 @@ function App() {
             </button>
 
             <button
-              onClick={() => setActiveTab('ai-learning')}
+              onClick={() => setActiveTab('halte')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
-                activeTab === 'ai-learning' 
-                ?   'border-purple-500 text-purple-600' 
+                activeTab === 'halte' 
+                ?  'border-green-500 text-green-600' 
                 : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <div className="text-sm font-medium">🤖 AI Learning</div>
-              <div className="text-xs text-gray-400">Master AI & ML</div>
+              <div className="text-sm font-medium">🚏 Halte & Info</div>
+              <div className="text-xs text-gray-400">Bus stops</div>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('review')}
+              className={`py-4 px-2 border-b-2 font-medium transition-all ${
+                activeTab === 'review' 
+                ? 'border-yellow-500 text-yellow-600' 
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="text-sm font-medium">⭐ Review & Rating</div>
+              <div className="text-xs text-gray-400">Student feedback</div>
             </button>
           </div>
         </div>
@@ -160,7 +173,7 @@ function App() {
 
             {/* Bus Status Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {busData.map((bus, index) => (
+              {busData.map((bus) => (
                 <div
                   key={bus.id}
                   className="bg-white/70 backdrop-blur-sm p-4 rounded-xl shadow-lg border-l-4 hover:shadow-xl transition-all"
@@ -187,7 +200,7 @@ function App() {
                       <span>{bus.penumpang}/30 penumpang</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-gray-500">ETA:</span>
+                      <span className="text-gray-500">ETA: </span>
                       <span className="font-bold text-blue-600">{bus.eta} menit</span>
                     </div>
                   </div>
@@ -202,7 +215,7 @@ function App() {
                       <div 
                         className="h-2 rounded-full transition-all duration-500"
                         style={{ 
-                          width: `${(bus. penumpang/30) * 100}%`,
+                          width: `${(bus.penumpang/30) * 100}%`,
                           backgroundColor: bus.color
                         }}
                       ></div>
@@ -215,7 +228,7 @@ function App() {
         )}
 
         {activeTab === 'schedule' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
             {[
               { 
                 title: "🔵 Rute 1 - Utara", 
@@ -237,10 +250,10 @@ function App() {
               },
               { 
                 title: "🟢 Rute 3 - Timur", 
-                color: "green", 
-                route: "Terminal → FKM → FIB → Vokasi", 
+                color:  "green", 
+                route:  "Terminal → FKM → FIB → Vokasi", 
                 time: "07:00 - 17:00", 
-                freq: "25 menit", 
+                freq:  "25 menit", 
                 fakultas: "Kesehatan, Budaya, Vokasi",
                 halte: ["Terminal Tembalang", "FKM", "FIB", "Vokasi"]
               },
@@ -258,7 +271,7 @@ function App() {
                 <h3 className="text-lg font-bold mb-4 text-gray-700">{route.title}</h3>
                 <div className="space-y-3 text-sm">
                   <p><strong>🛣️ Rute:</strong> {route.route}</p>
-                  <p><strong>🏫 Melayani:</strong> {route.fakultas}</p>
+                  <p><strong>🏫 Melayani:</strong> {route. fakultas}</p>
                   <p><strong>🕐 Operasional:</strong> {route.time}</p>
                   <p><strong>⏱️ Frekuensi:</strong> Setiap {route.freq}</p>
                   <div>
@@ -275,22 +288,21 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'ai-learning' && (
-          <AILearningHub />
-        )}
+        {activeTab === 'halte' && <HaltePage />}
+        {activeTab === 'review' && <ReviewPage />}
       </main>
 
       {/* Enhanced Profile Modal */}
       {showProfile && (
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
-          style={{ zIndex: 9999 }}
+          style={{ zIndex:  9999 }}
           onClick={() => setShowProfile(false)}
         >
           <div 
             className="bg-white rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl" 
             style={{ zIndex: 10000 }}
-            onClick={(e) => e. stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -305,7 +317,7 @@ function App() {
                       : 'bg-blue-500 text-white hover:bg-blue-600'
                   }`}
                 >
-                  {isEditingProfile ?  '❌ Cancel' : '✏️ Edit'}
+                  {isEditingProfile ? '❌ Cancel' : '✏️ Edit'}
                 </button>
                 <button 
                   onClick={() => setShowProfile(false)}
@@ -343,7 +355,7 @@ function App() {
                     <input
                       type="text"
                       value={editData.name}
-                      onChange={(e) => setEditData({...editData, name: e.target. value})}
+                      onChange={(e) => setEditData({... editData, name: e.target.value})}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Nama Lengkap"
                     />
@@ -355,9 +367,9 @@ function App() {
                       placeholder="NIM"
                     />
                     <select
-                      value={editData.jurusan}
-                      onChange={(e) => setEditData({...editData, jurusan: e.target. value})}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editData. jurusan}
+                      onChange={(e) => setEditData({... editData, jurusan: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus: ring-blue-500 focus: border-transparent"
                     >
                       <option value="Informatika">Informatika</option>
                       <option value="Matematika">Matematika</option>
@@ -382,7 +394,7 @@ function App() {
                 )}
               </div>
               
-              {/* Statistics */}
+              {/* Statistics - UPDATED */}
               {! isEditingProfile && (
                 <div className="border-t border-gray-200 pt-6">
                   <h4 className="font-bold mb-4 flex items-center gap-2 text-gray-700">📊 Statistik Bulan Ini</h4>
@@ -390,15 +402,23 @@ function App() {
                     <div className="text-center p-4 bg-blue-50 rounded-xl border border-blue-200">
                       <div className="text-2xl font-bold text-blue-600 mb-1">24</div>
                       <div className="text-xs text-gray-600 font-medium">Total Trip</div>
+                      <div className="text-xs text-blue-500 mt-1">🚌</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
                       <div className="text-2xl font-bold text-green-600 mb-1">8. 5</div>
                       <div className="text-xs text-gray-600 font-medium">Jam Hemat</div>
+                      <div className="text-xs text-green-500 mt-1">⏱️</div>
                     </div>
                     <div className="text-center p-4 bg-purple-50 rounded-xl border border-purple-200">
-                      <div className="text-2xl font-bold text-purple-600 mb-1">🏆</div>
-                      <div className="text-xs text-gray-600 font-medium">Eco User</div>
+                      <div className="text-2xl font-bold text-purple-600 mb-1">12kg</div>
+                      <div className="text-xs text-gray-600 font-medium">CO₂ Saved</div>
+                      <div className="text-xs text-purple-500 mt-1">🌱</div>
                     </div>
+                  </div>
+                  <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-lg border border-green-200">
+                    <p className="text-xs text-center text-green-700 font-medium">
+                      🏆 Eco Warrior Badge!  Kamu udah hemat 12kg emisi CO₂ bulan ini! 
+                    </p>
                   </div>
                 </div>
               )}
@@ -406,7 +426,7 @@ function App() {
             
             {/* Action Buttons */}
             <div className="mt-8 pt-6 border-t border-gray-200">
-              {isEditingProfile ?  (
+              {isEditingProfile ? (
                 <div className="flex gap-3">
                   <button 
                     onClick={handleCancelEdit}

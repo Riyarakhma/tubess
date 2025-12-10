@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { supabase } from '../utils/supabaseClient'
 
 const AIChat = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -7,7 +8,7 @@ const AIChat = () => {
   const [messages, setMessages] = useState([
     { 
       id: 1, 
-      text: "Halo! Aku Dipy, AI assistant Bus Dipyo UNDIP! 👋\n\nAku tau semua info tentang:\n🚌 Jadwal & rute bus real-time\n🚏 Info halte dan waktu tiba\n📍 Lokasi bus saat ini\n⏰ Estimasi waktu perjalanan\n\nMau tanya apa nih? 😊", 
+      text: "Halo! Aku Dipy, AI assistant Bus Dipyo UNDIP!  👋\n\nAku tau semua info tentang:\n🚌 Jadwal & rute bus real-time\n🚏 Info halte dan waktu tiba\n📍 Lokasi bus saat ini\n⏰ Estimasi waktu perjalanan\n\nMau tanya apa nih? 😊", 
       isBot: true,
       time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
       mood: "happy"
@@ -20,7 +21,23 @@ const AIChat = () => {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Real UNDIP Bus Data
+  // Fetch real bus data from Supabase
+  const fetchBusData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('buses')
+        .select('*')
+        .eq('status', 'Aktif')
+      
+      if (error) throw error
+      return data || []
+    } catch (error) {
+      console.error('Error fetching buses:', error)
+      return []
+    }
+  }
+
+  // Real UNDIP Bus Data (fallback jika Supabase gagal)
   const busScheduleData = {
     routes: {
       1: {
@@ -29,7 +46,7 @@ const AIChat = () => {
         haltes: ["Terminal", "FEB", "Teknik", "FSM"],
         schedule: "06:00 - 18:00",
         frequency: "15 menit",
-        currentBus: { location: "FEB", eta_next: "5 menit", passengers: "18/30" }
+        currentBus: { location: "FEB", eta_next:  "5 menit", passengers: "18/30" }
       },
       2: {
         name: "Rute Selatan", 
@@ -48,7 +65,7 @@ const AIChat = () => {
         currentBus: { location: "FKM", eta_next: "12 menit", passengers: "12/30" }
       },
       4: {
-        name: "Rute Barat",
+        name:  "Rute Barat",
         color: "Orange",
         haltes: ["Terminal", "Perikanan", "Kedokteran"],
         schedule: "06:45 - 17:45",
@@ -80,7 +97,7 @@ const AIChat = () => {
         nextBus: "8 menit (Bus Dipyo 1)"
       },
       "FSM": {
-        fullName: "Fakultas Sains dan Matematika",
+        fullName:  "Fakultas Sains dan Matematika",
         description: "Gedung E1 & E2 - Lab komputer 24/7",
         facilities: ["Shelter", "WiFi area", "Vending machine"],
         routes: [1], 
@@ -110,132 +127,153 @@ const AIChat = () => {
     }
   }
 
-  // Super Smart Response Generator
-  const generateIntelligentResponse = (input) => {
-    const lowerInput = input. toLowerCase()
+  // Super Smart Response Generator with Supabase integration
+  const generateIntelligentResponse = async (input) => {
+    const lowerInput = input.toLowerCase()
     
     // Update conversation memory
-    setConversationContext(prev => [... prev.slice(-8), input])
+    setConversationContext(prev => [... prev. slice(-8), input])
     
+    // === LIVE STATUS WITH REAL DATA FROM SUPABASE ===
+    if (lowerInput.includes('dimana') || lowerInput.includes('posisi') || lowerInput.includes('status') || lowerInput.includes('live') || lowerInput.includes('bus terdekat')) {
+      const buses = await fetchBusData()
+      
+      if (buses.length > 0) {
+        const busListText = buses.map(bus => 
+          `🚌 **${bus.name}**\n📍 Rute: ${bus.rute}\n⏱️ ETA: ${bus.eta} menit\n👥 Penumpang: ${bus.penumpang}/${bus.capacity}\n📊 Status: ${bus.status}\n`
+        ).join('\n')
+        
+        return {
+          response: `📍 **Status Live Bus Dipyo Sekarang (Real-time dari Database):**\n\n${busListText}\n✨ Data diambil langsung dari sistem tracking UNDIP! `,
+          mood: "informative"
+        }
+      } else {
+        return {
+          response:  "❌ Maaf, belum ada bus yang aktif saat ini atau koneksi ke database bermasalah.  Coba cek lagi nanti ya!  🙏",
+          mood: "understanding"
+        }
+      }
+    }
+
     // === SPECIFIC BUS ROUTE QUESTIONS ===
     if (lowerInput.includes('rute') && lowerInput.includes('1')) {
       const route = busScheduleData.routes[1]
       return {
-        response: `🔵 **Rute 1 - ${route.name} (${route.color})**\n\n📍 **Halte yang dilalui:**\n${route.haltes.map((h, i) => `${i + 1}. ${h}`).join('\n')}\n\n⏰ **Jadwal:** ${route. schedule}\n🔄 **Frekuensi:** Setiap ${route.frequency}\n\n🚌 **Status real-time:**\n📍 Bus sekarang di: ${route.currentBus.location}\n⏱️ Tiba di halte berikutnya: ${route.currentBus.eta_next}\n👥 Penumpang: ${route. currentBus.passengers}\n\n**Perfect untuk ke FEB, Teknik, atau FSM!** Mau info halte spesifik ga? `,
+        response: `🔵 **Rute 1 - ${route.name} (${route.color})**\n\n📍 **Halte yang dilalui:**\n${route. haltes.map((h, i) => `${i + 1}. ${h}`).join('\n')}\n\n⏰ **Jadwal:** ${route.schedule}\n🔄 **Frekuensi:** Setiap ${route.frequency}\n\n🚌 **Status real-time:**\n📍 Bus sekarang di:  ${route.currentBus.location}\n⏱️ Tiba di halte berikutnya: ${route.currentBus.eta_next}\n👥 Penumpang: ${route.currentBus.passengers}\n\n**Perfect untuk ke FEB, Teknik, atau FSM!** Mau info halte spesifik ga? `,
         mood: "helpful"
       }
     }
 
     // === HALTE-SPECIFIC INFO ===
-    Object.keys(busScheduleData.halteDetails). forEach(halte => {
-      if (lowerInput. includes(halte. toLowerCase()) && (lowerInput.includes('halte') || lowerInput.includes('info') || lowerInput. includes('dimana'))) {
+    for (const halte of Object.keys(busScheduleData.halteDetails)) {
+      if (lowerInput.includes(halte. toLowerCase()) && (lowerInput.includes('halte') || lowerInput.includes('info') || lowerInput.includes('dimana'))) {
         const info = busScheduleData.halteDetails[halte]
         return {
-          response: `🚏 **Halte ${info.fullName}**\n\n📍 **Lokasi:** ${info. description}\n\n✨ **Fasilitas:**\n${info. facilities.map(f => `• ${f}`).join('\n')}\n\n🚌 **Bus yang lewat:** Rute ${info.routes ? info.routes. join(', ') : info.allRoutes. join(', ')}\n\n⏰ **Bus berikutnya:** ${info.nextBus || 'Cek live map untuk update terbaru'}\n\n💡 **Tips:** ${halte === 'Terminal' ? 'Ini starting point semua rute!' : halte === 'FSM' ? 'Lab komputer buka 24/7 loh!' : 'Halte strategis dengan akses mudah! '}`,
+          response: `🚏 **Halte ${info.fullName}**\n\n📍 **Lokasi:** ${info.description}\n\n✨ **Fasilitas:**\n${info.facilities.map(f => `• ${f}`).join('\n')}\n\n🚌 **Bus yang lewat:** Rute ${info.routes ?  info.routes.join(', ') : info.allRoutes.join(', ')}\n\n⏰ **Bus berikutnya:** ${info. nextBus || 'Cek live map untuk update terbaru'}\n\n💡 **Tips:** ${halte === 'Terminal' ? 'Ini starting point semua rute!' : halte === 'FSM' ? 'Lab komputer buka 24/7 loh!' : 'Halte strategis dengan akses mudah! '}`,
           mood: "informative"
         }
       }
-    })
+    }
 
     // === BUS TO SPECIFIC FACULTY ===
-    if (lowerInput. includes('bus ke') || (lowerInput.includes('ke') && (lowerInput.includes('feb') || lowerInput.includes('fsm') || lowerInput.includes('teknik')))) {
-      if (lowerInput. includes('feb')) {
+    if (lowerInput.includes('bus ke') || (lowerInput.includes('ke') && (lowerInput.includes('feb') || lowerInput.includes('fsm') || lowerInput.includes('teknik')))) {
+      if (lowerInput.includes('feb')) {
         return {
-          response: "📊 **Bus ke FEB (Fakultas Ekonomika & Bisnis)**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Dari:** Terminal Tembalang\n⏱️ **Waktu tempuh:** 3-4 menit\n🔄 **Frekuensi:** Setiap 15 menit (06:00-18:00)\n\n📱 **Status real-time:**\n• Bus sedang di area FEB sekarang\n• Bus berikutnya: 5 menit lagi\n• Kapasitas: 18/30 (masih longgar)\n\n💡 **Tips FEB:**\n• Gedung ber-AC, kantin lengkap\n• Dekat dengan area parkir utama\n• Akses mudah ke perpustakaan pusat\n\nLagi mau kuliah atau ada urusan apa di FEB? 😊",
+          response: "📊 **Bus ke FEB (Fakultas Ekonomika & Bisnis)**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Dari:** Terminal Tembalang\n⏱️ **Waktu tempuh:** 3-4 menit\n🔄 **Frekuensi:** Setiap 15 menit (06:00-18:00)\n\n📱 **Status real-time:**\n• Bus sedang di area FEB sekarang\n• Bus berikutnya:  5 menit lagi\n• Kapasitas: 18/30 (masih longgar)\n\n💡 **Tips FEB:**\n• Gedung ber-AC, kantin lengkap\n• Dekat dengan area parkir utama\n• Akses mudah ke perpustakaan pusat\n\nLagi mau kuliah atau ada urusan apa di FEB?  😊",
           mood: "helpful"
         }
       }
       
       if (lowerInput.includes('fsm')) {
         return {
-          response: "🔬 **Bus ke FSM (Fakultas Sains & Matematika)**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Rute:** Terminal → FEB → Teknik → **FSM**\n⏱️ **Waktu tempuh:** 8-10 menit total\n🔄 **Frekuensi:** Setiap 15 menit\n\n📱 **Status real-time:**\n• Bus sekarang di FEB, menuju Teknik\n• ETA ke FSM: 12 menit\n• Kapasitas: 18/30 penumpang\n\n🎓 **Info FSM:**\n• Gedung E1 & E2 (lab komputer, fisika, kimia)\n• Lab komputer buka 24/7!\n• Jurusan: Informatika, Matematika, Fisika, Kimia, Biologi, Statistika\n\n💻 **Fun fact:** Kalau mau coding atau praktikum, FSM tempatnya! Ada WiFi kenceng dan colokan banyak 😄",
+          response: "🔬 **Bus ke FSM (Fakultas Sains & Matematika)**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Rute:** Terminal → FEB → Teknik → **FSM**\n⏱️ **Waktu tempuh:** 8-10 menit total\n🔄 **Frekuensi:** Setiap 15 menit\n\n📱 **Status real-time:**\n• Bus sekarang di FEB, menuju Teknik\n• ETA ke FSM: 12 menit\n• Kapasitas: 18/30 penumpang\n\n🎓 **Info FSM:**\n• Gedung E1 & E2 (lab komputer, fisika, kimia)\n• Lab komputer buka 24/7!\n• Jurusan:  Informatika, Matematika, Fisika, Kimia, Biologi, Statistika\n\n💻 **Fun fact:** Kalau mau coding atau praktikum, FSM tempatnya! Ada WiFi kenceng dan colokan banyak 😄",
           mood: "excited"
         }
       }
 
       if (lowerInput.includes('teknik')) {
         return {
-          response: "⚙️ **Bus ke Fakultas Teknik**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Rute:** Terminal → FEB → **Teknik** → FSM\n⏱️ **Waktu tempuh:** 6-7 menit dari Terminal\n🔄 **Frekuensi:** Setiap 15 menit\n\n📱 **Status real-time:**\n• Bus location: Area FEB sekarang\n• ETA ke Teknik: 8 menit\n• Kondisi: Normal, tidak delay\n\n🏗️ **Info Teknik:**\n• Fakultas TERBESAR di UNDIP!\n• Jurusan: Sipil, Mesin, Elektro, Kimia, Arsitektur, PWK, dll\n• Komplek gedung bertingkat dengan lab canggih\n• Ada kantinnya Bu Sari yang legendaris! 🍜\n\nKamu jurusan apa di Teknik? Atau mau ke lab/workshop tertentu? ",
+          response: "⚙️ **Bus ke Fakultas Teknik**\n\n🚌 **Naik:** Bus Dipyo 1 (Rute Biru)\n📍 **Rute:** Terminal → FEB → **Teknik** → FSM\n⏱️ **Waktu tempuh:** 6-7 menit dari Terminal\n🔄 **Frekuensi:** Setiap 15 menit\n\n📱 **Status real-time:**\n• Bus location: Area FEB sekarang\n• ETA ke Teknik: 8 menit\n• Kondisi: Normal, tidak delay\n\n🏗️ **Info Teknik:**\n• Fakultas TERBESAR di UNDIP!\n• Jurusan: Sipil, Mesin, Elektro, Kimia, Arsitektur, PWK, dll\n• Komplek gedung bertingkat dengan lab canggih\n• Ada kantinnya Bu Sari yang legendaris!  🍜\n\nKamu jurusan apa di Teknik? Atau mau ke lab/workshop tertentu? ",
           mood: "enthusiastic"
         }
       }
     }
 
     // === JADWAL & WAKTU ===
-    if (lowerInput.includes('jadwal') || lowerInput.includes('jam') || lowerInput. includes('schedule')) {
+    if (lowerInput.includes('jadwal') || lowerInput.includes('jam') || lowerInput.includes('schedule')) {
       return {
-        response: "⏰ **Jadwal Lengkap Bus Dipyo UNDIP**\n\n🌅 **JADWAL OPERASIONAL:**\n\n🔵 **Rute 1 (Biru)** - FEB→Teknik→FSM\n• Jam: 06:00 - 18:00\n• Frekuensi: Setiap 15 menit\n• Peak hours: 07:00-09:00, 16:00-18:00\n\n🔴 **Rute 2 (Merah)** - FISIP→Psikologi→Hukum  \n• Jam: 06:30 - 17:30\n• Frekuensi: Setiap 20 menit\n\n🟢 **Rute 3 (Hijau)** - FKM→FIB→Vokasi\n• Jam: 07:00 - 17:00 \n• Frekuensi: Setiap 25 menit\n\n🟡 **Rute 4 (Orange)** - Perikanan→Kedokteran\n• Jam: 06:45 - 17:45\n• Frekuensi: Setiap 18 menit\n\n📍 **Semua rute START dari Terminal Tembalang**\n\nMau jadwal rute yang mana secara detail? ",
-        mood: "informative"
-      }
-    }
-
-    // === LIVE STATUS ===
-    if (lowerInput. includes('dimana') || lowerInput.includes('posisi') || lowerInput.includes('status') || lowerInput.includes('live')) {
-      return {
-        response: "📍 **Status Live Bus Dipyo Sekarang:**\n\n🚌 **Bus Dipyo 1** (Rute Biru)\n📍 Posisi: Area FEB → menuju Teknik\n⏱️ ETA Teknik: 3 menit\n⏱️ ETA FSM: 8 menit\n👥 Penumpang: 18/30\n\n🚌 **Bus Dipyo 2** (Rute Merah)\n📍 Posisi: Terminal → menuju FISIP\n⏱️ ETA FISIP: 5 menit\n👥 Penumpang: 15/30\n\n🚌 **Bus Dipyo 3** (Rute Hijau)\n📍 Posisi: Area FKM\n⏱️ ETA FIB: 6 menit\n👥 Penumpang: 12/30\n\n🚌 **Bus Dipyo 4** (Rute Orange)\n📍 Posisi: Perikanan → Kedokteran\n⏱️ ETA: 4 menit\n👥 Penumpang: 22/30 (agak penuh)\n\n🟢 **Semua bus beroperasi normal!**",
+        response: "⏰ **Jadwal Lengkap Bus Dipyo UNDIP**\n\n🌅 **JADWAL OPERASIONAL:**\n\n🔵 **Rute 1 (Biru)** - FEB→Teknik→FSM\n• Jam: 06:00 - 18:00\n• Frekuensi:  Setiap 15 menit\n• Peak hours: 07:00-09:00, 16:00-18:00\n\n🔴 **Rute 2 (Merah)** - FISIP→Psikologi→Hukum\n• Jam: 06:30 - 17:30\n• Frekuensi: Setiap 20 menit\n\n🟢 **Rute 3 (Hijau)** - FKM→FIB→Vokasi\n• Jam: 07:00 - 17:00\n• Frekuensi: Setiap 25 menit\n\n🟡 **Rute 4 (Orange)** - Perikanan→Kedokteran\n• Jam: 06:45 - 17:45\n• Frekuensi: Setiap 18 menit\n\n📍 **Semua rute START dari Terminal Tembalang**\n\n✨ **GRATIS untuk mahasiswa & dosen UNDIP!**\n\nMau jadwal rute yang mana secara detail? ",
         mood: "informative"
       }
     }
 
     // === FAKULTAS INFO ===
-    if (lowerInput. includes('fakultas') && !lowerInput.includes('bus')) {
+    if (lowerInput.includes('fakultas') && ! lowerInput.includes('bus')) {
       return {
-        response: "🏫 **Fakultas di UNDIP Tembalang:**\n\n📊 **FEB** - Ekonomika & Bisnis (Rute 1)\n• Manajemen, Akuntansi, Ekonomi Pembangunan\n\n⚙️ **Teknik** - Fakultas Terbesar (Rute 1)\n• Sipil, Mesin, Elektro, Kimia, Arsitektur, PWK\n\n🔬 **FSM** - Sains & Matematika (Rute 1)\n• Informatika, Matematika, Fisika, Kimia, Biologi\n\n🏛️ **FISIP** - Sosial & Politik (Rute 2) \n• Administrasi Publik, Hubungan Internasional\n\n🧠 **Psikologi** (Rute 2)\n• Program S1 dan S2 Psikologi\n\n⚖️ **Hukum** - Tertua di UNDIP (Rute 2)\n• Ilmu Hukum S1, S2, S3\n\n🏥 **FKM** - Kesehatan Masyarakat (Rute 3)\n🐟 **Perikanan** & Kelautan (Rute 4)\n⚕️ **Kedokteran** & Kedokteran Gigi (Rute 4)\n\nMau info fakultas yang mana?",
+        response: "🏫 **Fakultas di UNDIP Tembalang:**\n\n📊 **FEB** - Ekonomika & Bisnis (Rute 1)\n• Manajemen, Akuntansi, Ekonomi Pembangunan\n\n⚙️ **Teknik** - Fakultas Terbesar (Rute 1)\n• Sipil, Mesin, Elektro, Kimia, Arsitektur, PWK\n\n🔬 **FSM** - Sains & Matematika (Rute 1)\n• Informatika, Matematika, Fisika, Kimia, Biologi\n\n🏛️ **FISIP** - Sosial & Politik (Rute 2)\n• Administrasi Publik, Hubungan Internasional\n\n🧠 **Psikologi** (Rute 2)\n• Program S1 dan S2 Psikologi\n\n⚖️ **Hukum** - Tertua di UNDIP (Rute 2)\n• Ilmu Hukum S1, S2, S3\n\n🏥 **FKM** - Kesehatan Masyarakat (Rute 3)\n🐟 **Perikanan** & Kelautan (Rute 4)\n⚕️ **Kedokteran** & Kedokteran Gigi (Rute 4)\n\nMau info fakultas yang mana? ",
         mood: "helpful"
       }
     }
 
+    // === REVIEW/RATING PROMPT ===
+    if (lowerInput.includes('review') || lowerInput.includes('rating') || lowerInput.includes('bintang') || lowerInput.includes('kasih nilai')) {
+      return {
+        response: "⭐ **Review & Rating Bus Dipyo**\n\nWah, mau kasih review ya?  Itu sangat membantu! 🙏\n\n📝 **Cara kasih review:**\n1. Klik tab **⭐ Review & Rating** di atas\n2. Pilih bus yang mau di-review\n3. Kasih bintang 1-5 ⭐\n4. Tulis pengalaman kamu\n5. Submit!\n\n💡 **Review kamu akan membantu:**\n• Mahasiswa lain tahu kualitas service\n• Tim Bus Dipyo improve layanan\n• Rekomendasi rute terbaik\n\nYuk kasih review sekarang! 🚀",
+        mood: "encouraging"
+      }
+    }
+
     // === CASUAL CONVERSATION ===
-    if (lowerInput. includes('halo') || lowerInput.includes('hai')) {
+    if (lowerInput.includes('halo') || lowerInput.includes('hai') || lowerInput.includes('hi')) {
       const greetings = [
-        "Halo! 👋 Senang ketemu kamu! Ada yang bisa aku bantu soal Bus Dipyo hari ini?  Atau mau ngobrol santai aja juga boleh!  😊",
-        "Hai hai! ✨ Gimana kabarnya? Lagi butuh info transportasi kampus atau just want to chat? Aku siap! 🚌",
+        "Halo! 👋 Senang ketemu kamu!  Ada yang bisa aku bantu soal Bus Dipyo hari ini?  Atau mau ngobrol santai aja juga boleh! 😊",
+        "Hai hai! ✨ Gimana kabarnya?  Lagi butuh info transportasi kampus atau just want to chat?  Aku siap!  🚌",
         "Hello there! 🌟 Aku Dipy, ready to help!  Mau tanya soal jadwal bus, rute, atau hal lain? All ears!"
       ]
       return {
-        response: greetings[Math.floor(Math. random() * greetings.length)],
+        response: greetings[Math.floor(Math.random() * greetings.length)],
         mood: "friendly"
       }
     }
 
     // === WEATHER & TRANSPORTATION ===
-    if (lowerInput. includes('hujan') || lowerInput.includes('panas') || lowerInput.includes('cuaca')) {
+    if (lowerInput.includes('hujan') || lowerInput.includes('panas') || lowerInput.includes('cuaca')) {
       return {
-        response: "🌤️ Oh iya, cuaca Semarang emang unpredictable!\n\nMakanya Bus Dipyo itu lifesaver banget:\n\n☔ **Kalau hujan:**\n• Tetap kering dan nyaman\n• Ga perlu bawa jas hujan ribet\n• Schedule tetap jalan (kecuali hujan extreme)\n\n☀️ **Kalau panas:**\n• AC dingin di dalam bus\n• Ga kepanasan kayak naik motor\n• Bisa rileks sambil lihat pemandangan\n\n💡 **Pro tip:** Cek weather forecast di pagi hari, kalau looks like bakal hujan, better naik Bus Dipyo daripada motor!\n\nLagi planning perjalanan ya karena cuaca?  Mau ke fakultas mana? 🚌",
+        response: "🌤️ Oh iya, cuaca Semarang emang unpredictable!\n\nMakanya Bus Dipyo itu lifesaver banget:\n\n☔ **Kalau hujan:**\n• Tetap kering dan nyaman\n• Ga perlu bawa jas hujan ribet\n• Schedule tetap jalan (kecuali hujan extreme)\n\n☀️ **Kalau panas:**\n• AC dingin di dalam bus\n• Ga kepanasan kayak naik motor\n• Bisa rileks sambil lihat pemandangan\n\n💡 **Pro tip:** Cek weather forecast di pagi hari, kalau looks like bakal hujan, better naik Bus Dipyo daripada motor!\n\nLagi planning perjalanan ya karena cuaca?  Mau ke fakultas mana?  🚌",
         mood: "understanding"
       }
     }
 
     // === RANDOM/GENERAL CONVERSATION ===
     const naturalResponses = [
-      `Interesting! "${input}" ya?  🤔\n\nAku belum pernah diajak ngobrol tentang ini sebelumnya! Tell me more - ada cerita khusus di balik topik ini?\n\nBtw, kalau ada yang mau ditanyain soal Bus Dipyo juga, just let me know ya! Aku happy to chat about anything! 😊`,
+      `Interesting! "${input}" ya? 🤔\n\nAku belum pernah diajak ngobrol tentang ini sebelumnya!  Tell me more - ada cerita khusus di balik topik ini?\n\nBtw, kalau ada yang mau ditanyain soal Bus Dipyo juga, just let me know ya!  Aku happy to chat about anything! 😊`,
       
-      `Oh "${input}"! 💭\n\nSounds intriguing! Kamu kenapa tiba-tiba kepikiran ini?  Ada experience atau maybe something you're curious about?\n\nAku suka banget dengerin different perspectives.  Share more dong! And if you need any bus info along the way, aku siap! 🚌✨`,
+      `Oh "${input}"! 💭\n\nSounds intriguing!  Kamu kenapa tiba-tiba kepikiran ini? Ada experience atau maybe something you're curious about?\n\nAku suka banget dengerin different perspectives.  Share more dong!  And if you need any bus info along the way, aku siap!  🚌✨`,
       
-      `"${input}" nih! That's quite a topic! 🌟\n\nAku curious - what got you thinking about this?  Personal experience kah atau lagi research something?\n\nFeel free to elaborate! Dan kapan aja butuh info transportasi UNDIP, tinggal bilang aja ya! 😄`
+      `"${input}" nih! That's quite a topic! 🌟\n\nAku curious - what got you thinking about this? Personal experience kah atau lagi research something?\n\nFeel free to elaborate! Dan kapan aja butuh info transportasi UNDIP, tinggal bilang aja ya! 😄`
     ]
 
     return {
-      response: naturalResponses[Math.floor(Math.random() * naturalResponses.length)],
+      response: naturalResponses[Math.floor(Math.random() * naturalResponses. length)],
       mood: "curious"
     }
   }
 
-  // Rest of the component code stays the same... 
   const getAiAvatar = (mood) => {
     switch(mood) {
-      case "happy": case "friendly": return "😊"
+      case "happy":  case "friendly": return "😊"
       case "excited": case "enthusiastic": return "🤩"
-      case "helpful": case "informative": return "🤓" 
+      case "helpful": case "informative": return "🤓"
       case "thinking": return "🤔"
       case "caring": case "understanding": return "🥰"
       case "curious": return "🧐"
+      case "encouraging": return "🌟"
       default: return "😊"
     }
   }
 
-  const handleSend = () => {
-    if (! inputText.trim()) return
+  const handleSend = async () => {
+    if (!inputText.trim()) return
 
     const newTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     
@@ -243,7 +281,7 @@ const AIChat = () => {
       id: Date.now(), 
       text: inputText, 
       isBot: false, 
-      time: newTime 
+      time:  newTime 
     }])
 
     setIsTyping(true)
@@ -251,17 +289,17 @@ const AIChat = () => {
     
     const delay = Math.min(Math.max(inputText.length * 35 + Math.random() * 1000, 800), 2500)
     
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsTyping(false)
-      const { response, mood } = generateIntelligentResponse(inputText)
+      const { response, mood } = await generateIntelligentResponse(inputText)
       setAiMood(mood)
       
-      setMessages(prev => [... prev, { 
+      setMessages(prev => [...prev, { 
         id: Date.now() + 1, 
         text: response, 
         isBot: true, 
-        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        mood: mood
+        time:  new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        mood:  mood
       }])
     }, delay)
 
@@ -294,9 +332,9 @@ const AIChat = () => {
     { text: "🚌 Bus ke FEB", query: "bus ke feb" },
     { text: "🔬 Bus ke FSM", query: "bus ke fsm" },  
     { text: "⏰ Jadwal semua rute", query: "jadwal bus undip" },
-    { text: "📍 Status bus live", query: "posisi bus sekarang dimana" },
-    { text: "🚏 Info halte", query: "info halte terminal" },
-    { text: "😊 Ngobrol santai", query: "hai dipy, apa kabar?" }
+    { text:  "📍 Status bus live", query: "posisi bus sekarang dimana" },
+    { text:  "🚏 Info halte", query: "info halte terminal" },
+    { text: "⭐ Kasih review", query: "mau kasih review bus" }
   ]
 
   return (
@@ -347,24 +385,36 @@ const AIChat = () => {
               </div>
               
               <div className="flex items-center gap-2">
-                <button onClick={toggleQuickButtons} className="hover:bg-white/20 p-2 rounded-full transition-colors">
-                  <span className="text-sm">{showQuickButtons ? '🎯' : '⚡'}</span>
+                <button 
+                  onClick={toggleQuickButtons} 
+                  className="hover:bg-white/20 p-2 rounded-full transition-colors"
+                  title={showQuickButtons ? "Sembunyikan menu cepat" : "Tampilkan menu cepat"}
+                >
+                  <span className="text-sm">{showQuickButtons ? '▼' : '▲'}</span>
                 </button>
-                <button onClick={minimizeChat} className="hover:bg-white/20 p-2 rounded-full transition-colors">
+                <button 
+                  onClick={minimizeChat} 
+                  className="hover:bg-white/20 p-2 rounded-full transition-colors"
+                  title={isMinimized ? "Buka chat" : "Minimize chat"}
+                >
                   <span className="text-sm">{isMinimized ? '🔼' : '🔽'}</span>
                 </button>
-                <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-2 rounded-full transition-colors">✕</button>
+                <button 
+                  onClick={() => setIsOpen(false)} 
+                  className="hover: bg-white/20 p-2 rounded-full transition-colors"
+                  title="Tutup chat"
+                >✕</button>
               </div>
             </div>
           </div>
 
-          {!isMinimized && (
+          {! isMinimized && (
             <>
               {/* Messages */}
               <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gradient-to-b from-blue-50/50 to-indigo-50/30">
-                {messages. map(msg => (
-                  <div key={msg.id} className={`flex ${msg.isBot ?  'justify-start' : 'justify-end'}`}>
-                    <div className={`max-w-[85%] ${msg. isBot ? 'order-2' : ''}`}>
+                {messages.map(msg => (
+                  <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
+                    <div className={`max-w-[85%] ${msg.isBot ?  'order-2' : ''}`}>
                       {msg.isBot && (
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-8 h-8 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-lg">
@@ -376,12 +426,12 @@ const AIChat = () => {
                       )}
                       <div className={`p-4 rounded-2xl shadow-lg transition-all hover:scale-105 ${
                         msg.isBot 
-                          ? 'bg-gradient-to-br from-white to-indigo-50 border-2 border-indigo-100 text-gray-800' 
-                          : 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
+                          ?  'bg-gradient-to-br from-white to-indigo-50 border-2 border-indigo-100 text-gray-800' 
+                          :  'bg-gradient-to-r from-indigo-500 to-purple-600 text-white'
                       }`}>
                         <p className="text-sm whitespace-pre-line leading-relaxed font-medium">{msg.text}</p>
                       </div>
-                      {!msg.isBot && (
+                      {! msg.isBot && (
                         <div className="text-right mt-1">
                           <span className="text-xs text-gray-400">{msg.time}</span>
                         </div>
@@ -442,7 +492,7 @@ const AIChat = () => {
                   </div>
                   <button
                     onClick={handleSend}
-                    disabled={!inputText. trim()}
+                    disabled={!inputText.trim()}
                     className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-3 rounded-2xl hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-110"
                   >
                     <span className="relative z-10">➤</span>
