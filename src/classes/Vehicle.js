@@ -1,5 +1,3 @@
-// Parent Class - Vehicle (untuk Inheritance)
-
 export class Vehicle {
   constructor(id, lat, lng, status) {
     this.id = id;
@@ -9,7 +7,6 @@ export class Vehicle {
     this.lastUpdated = new Date();
   }
   
-  // Method untuk update posisi
   updatePosition(lat, lng) {
     this.lat = lat;
     this.lng = lng;

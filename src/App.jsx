@@ -1,15 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import SplashScreen from './components/SplashScreen'
 import MapView from './components/MapView'
 import AIChat from './components/AIChat'
 import ReviewPage from './components/ReviewPage'
 import HaltePage from './components/HaltePage'
 
+// Import OOP Classes
+import {
+  BusManager,
+  ACBus,
+  ElectricBus,
+  Bus,
+  Halte,
+  BusFullException,
+  BusNotFoundException,
+  HalteNotFoundException,
+  BusSystemException
+} from './utils/BusOOP'
+
 function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('map')
   const [showProfile, setShowProfile] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  
+  // OOP Manager Instance - Main controller untuk semua bus operations
+  const [busManager] = useState(() => new BusManager())
+  const [buses, setBuses] = useState([])
+
   const [userProfile, setUserProfile] = useState({
     name: "biell rhma yasmin",
     nim: "211201231401",
@@ -23,12 +41,162 @@ function App() {
 
   const [editData, setEditData] = useState(userProfile)
 
-  const busData = [
-    { id:  1, name: "Bus Dipyo 1", rute: "Terminal → FEB → Teknik → FSM", eta: 5, penumpang: 18, status: "Aktif", color: "#3B82F6" },
-    { id: 2, name: "Bus Dipyo 2", rute: "Terminal → FISIP → Psikologi → Hukum", eta: 8, penumpang: 15, status: "Aktif", color: "#EF4444" },
-    { id: 3, name: "Bus Dipyo 3", rute: "Terminal → FKM → FIB → Vokasi", eta: 12, penumpang: 12, status: "Aktif", color: "#10B981" },
-    { id: 4, name: "Bus Dipyo 4", rute: "Terminal → Perikanan → Kedokteran", eta: 15, penumpang: 22, status: "Delay", color: "#F59E0B" }
-  ]
+  // Initialize OOP System
+  useEffect(() => {
+    try {
+      console.log('🚀 Initializing OOP Bus System...')
+
+      // Create different types of buses (Polymorphism & Inheritance)
+      const bus1 = new ACBus(1, 'Bus Dipyo 1', 1, -7.0500, 110.4390, 22) // AC Bus dengan temp 22°C
+      const bus2 = new ElectricBus(2, 'Bus Dipyo 2', 2, -7.0495, 110.4385, 85) // Electric Bus dengan battery 85%
+      const bus3 = new Bus(3, 'Bus Dipyo 3', 3, -7.0485, 110.4400) // Standard Bus
+      const bus4 = new ACBus(4, 'Bus Dipyo 4', 4, -7.0525, 110.4360, 20) // AC Bus dengan temp 20°C
+
+      // Set initial properties using OOP methods
+      bus1.addPassenger(18)
+      bus1.setSpeed(25)
+      bus1.eta = 5
+
+      bus2.addPassenger(15)
+      bus2.setSpeed(22)
+      bus2.eta = 8
+
+      bus3.addPassenger(12)
+      bus3.setSpeed(20)
+      bus3.eta = 12
+
+      bus4.addPassenger(22)
+      bus4.setSpeed(18)
+      bus4.eta = 15
+      bus4.setStatus('Delay')
+
+      // Add buses to manager (Encapsulation)
+      busManager.addBus(bus1)
+      busManager.addBus(bus2)
+      busManager.addBus(bus3)
+      busManager.addBus(bus4)
+
+      // Create Haltes using OOP
+      const terminal = new Halte(1, 'Terminal', -7.0520, 110.4370, 'Terminal Tembalang UNDIP')
+      const feb = new Halte(2, 'FEB', -7.0500, 110.4390, 'Fakultas Ekonomika dan Bisnis')
+      const teknik = new Halte(3, 'Teknik', -7.0515, 110.4395, 'Fakultas Teknik')
+      const fsm = new Halte(4, 'FSM', -7.0505, 110.4380, 'Fakultas Sains dan Matematika')
+
+      // Add facilities and routes to haltes
+      terminal.addFacility('Shelter')
+      terminal.addFacility('Security')
+      terminal.addFacility('Information Desk')
+      terminal.addRoute(1)
+      terminal.addRoute(2)
+      terminal.addRoute(3)
+      terminal.addRoute(4)
+
+      feb.addFacility('Shelter')
+      feb.addFacility('Kantin')
+      feb.addRoute(1)
+
+      busManager.addHalte(terminal)
+      busManager.addHalte(feb)
+      busManager.addHalte(teknik)
+      busManager.addHalte(fsm)
+
+      // Initialize buses state
+      setBuses(busManager.getAllBuses())
+
+      // Log system stats (menggunakan OOP methods)
+      console.log('✅ OOP System Initialized')
+      console.log('📊 System Stats:', busManager.getSystemStats())
+      console.log('🚌 Active Buses:', busManager.getActiveBuses().length)
+
+      // Demo Polymorphism - getInfo() berbeda untuk setiap tipe bus
+      busManager.getAllBuses().forEach(bus => {
+        console.log(`${bus.name} Info:`, bus.getInfo())
+      })
+
+    } catch (error) {
+      console.error('❌ Initialization Error:', error.message)
+      if (error instanceof BusSystemException) {
+        console.error('Error Code:', error.code)
+        console.error('Timestamp:', error.timestamp)
+      }
+    }
+  }, [busManager])
+
+  // Simulate Bus Movement with OOP methods & Exception Handling
+  useEffect(() => {
+    const interval = setInterval(() => {
+      try {
+        const allBuses = busManager.getAllBuses()
+        
+        allBuses.forEach(bus => {
+          // Update location using OOP method
+          const newLat = bus.location.lat + (Math.random() - 0.5) * 0.0005
+          const newLng = bus.location.lng + (Math.random() - 0.5) * 0.0005
+          bus.updateLocation(newLat, newLng)
+          
+          // Passenger simulation with Exception Handling
+          try {
+            // Random passenger boarding
+            if (Math.random() > 0.7 && bus.penumpang < bus.capacity) {
+              const count = Math.floor(Math.random() * 3) + 1
+              bus.addPassenger(count) // OOP method dengan validation
+            }
+            
+            // Random passenger alighting
+            if (Math.random() > 0.8 && bus.penumpang > 5) {
+              const count = Math.floor(Math.random() * 2) + 1
+              bus.removePassenger(count) // OOP method dengan validation
+            }
+          } catch (error) {
+            // Exception handling untuk bus operations
+            if (error instanceof BusFullException) {
+              console.log(`🚌 ${bus.name} penuh! Kapasitas: ${bus.capacity}`)
+            } else if (error instanceof BusSystemException) {
+              console.log(`⚠️ ${error.message}`)
+            }
+          }
+
+          // Update speed using OOP method with validation
+          try {
+            const newSpeed = Math.max(15, Math.min(30, bus.speed + Math.floor(Math.random() * 3) - 1))
+            bus.setSpeed(newSpeed) // Akan throw exception jika speed invalid
+          } catch (error) {
+            console.log('Speed update error:', error.message)
+          }
+
+          // Special operations untuk specialized buses (Polymorphism)
+          if (bus instanceof ElectricBus) {
+            // Electric bus konsumsi battery
+            if (bus.batteryLevel > 0) {
+              bus.batteryLevel = Math.max(20, bus.batteryLevel - 0.5)
+            }
+            if (bus.needsCharging()) {
+              console.log(`🔋 ${bus.name} needs charging! Battery: ${bus.batteryLevel}%`)
+            }
+          }
+
+          if (bus instanceof ACBus) {
+            // AC bus auto adjust temperature
+            if (bus.getOccupancyRate() > 70) {
+              try {
+                bus.setACTemp(20) // Lower temp when crowded
+              } catch (error) {
+                console.log('AC temp error:', error.message)
+              }
+            }
+          }
+        })
+
+        // Update state
+        setBuses([...allBuses])
+
+      } catch (error) {
+        console.error('Simulation error:', error.message)
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [busManager])
 
   const handleSplashComplete = () => {
     setIsLoading(false)
@@ -45,7 +213,7 @@ function App() {
   }
 
   const handlePhotoChange = (e) => {
-    const file = e.target. files[0]
+    const file = e.target.files[0]
     if (file) {
       const reader = new FileReader()
       reader.onload = (e) => {
@@ -55,10 +223,31 @@ function App() {
     }
   }
 
-  // Show splash screen first
   if (isLoading) {
     return <SplashScreen onComplete={handleSplashComplete} />
   }
+
+  // Convert OOP buses to display format
+  // Menggunakan Polymorphism - getInfo() method yang berbeda untuk setiap tipe
+  const busData = buses.map(bus => {
+    const info = bus.getInfo() // Polymorphic call
+    return {
+      id: bus.id,
+      name: bus.name,
+      rute: `Terminal → ${info.rute === 1 ? 'FEB → Teknik → FSM' : info.rute === 2 ? 'FISIP → Psikologi → Hukum' : info.rute === 3 ? 'FKM → FIB → Vokasi' : 'Perikanan → Kedokteran'}`,
+      eta: bus.eta,
+      penumpang: bus.penumpang,
+      status: bus.status,
+      color: bus.id === 1 ? '#3B82F6' : bus.id === 2 ? '#EF4444' : bus.id === 3 ? '#10B981' : '#F59E0B',
+      // Additional info from polymorphic getInfo()
+      type: info.type || 'Standard',
+      acTemp: info.acTemp,
+      acStatus: info.acStatus,
+      battery: info.battery,
+      ecoFriendly: info.ecoFriendly,
+      occupancyRate: bus.getOccupancyRate() // OOP method
+    }
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -85,8 +274,8 @@ function App() {
               </div>
               
               <button 
-                onClick={() => setShowProfile(! showProfile)}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover: shadow-lg transition-all"
+                onClick={() => setShowProfile(!showProfile)}
+                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all"
               >
                 <span className="text-sm">👤 Profile</span>
               </button>
@@ -95,7 +284,7 @@ function App() {
         </div>
       </header>
 
-      {/* Navigation Tabs - USER FOKUS */}
+      {/* Navigation Tabs */}
       <div className="bg-white/60 backdrop-blur-sm border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-8">
@@ -103,8 +292,8 @@ function App() {
               onClick={() => setActiveTab('map')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'map' 
-                ?  'border-blue-500 text-blue-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <div className="text-sm font-medium">🗺️ Live Map</div>
@@ -115,8 +304,8 @@ function App() {
               onClick={() => setActiveTab('schedule')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'schedule' 
-                ? 'border-blue-500 text-blue-600' 
-                : 'border-transparent text-gray-500 hover: text-gray-700'
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <div className="text-sm font-medium">📅 Jadwal & Rute</div>
@@ -127,8 +316,8 @@ function App() {
               onClick={() => setActiveTab('halte')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'halte' 
-                ?  'border-green-500 text-green-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-green-500 text-green-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <div className="text-sm font-medium">🚏 Halte & Info</div>
@@ -139,8 +328,8 @@ function App() {
               onClick={() => setActiveTab('review')}
               className={`py-4 px-2 border-b-2 font-medium transition-all ${
                 activeTab === 'review' 
-                ? 'border-yellow-500 text-yellow-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-yellow-500 text-yellow-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
               <div className="text-sm font-medium">⭐ Review & Rating</div>
@@ -167,11 +356,10 @@ function App() {
                 </div>
               </div>
               
-              {/* MapView Component */}
               <MapView />
             </div>
 
-            {/* Bus Status Cards */}
+            {/* Bus Status Cards - Using OOP data */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {busData.map((bus) => (
                 <div
@@ -189,6 +377,15 @@ function App() {
                       {bus.status}
                     </span>
                   </div>
+
+                  {/* Bus Type Badge - dari polymorphic getInfo() */}
+                  {bus.type && (
+                    <div className="mb-3">
+                      <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                        {bus.type} Bus {bus.ecoFriendly && '🌱'}
+                      </span>
+                    </div>
+                  )}
                   
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
@@ -203,19 +400,33 @@ function App() {
                       <span className="text-gray-500">ETA: </span>
                       <span className="font-bold text-blue-600">{bus.eta} menit</span>
                     </div>
+
+                    {/* Special properties from OOP classes */}
+                    {bus.acTemp && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span>❄️</span>
+                        <span>AC: {bus.acTemp} {bus.acStatus}</span>
+                      </div>
+                    )}
+                    {bus.battery && (
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span>🔋</span>
+                        <span>Battery: {bus.battery}</span>
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Capacity Progress Bar */}
+                  {/* Capacity Progress Bar - using OOP method */}
                   <div className="mt-3">
                     <div className="flex justify-between text-xs text-gray-500 mb-1">
                       <span>Kapasitas</span>
-                      <span>{Math.round((bus.penumpang/30) * 100)}%</span>
+                      <span>{bus.occupancyRate}%</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div 
                         className="h-2 rounded-full transition-all duration-500"
                         style={{ 
-                          width: `${(bus.penumpang/30) * 100}%`,
+                          width: `${bus.occupancyRate}%`,
                           backgroundColor: bus.color
                         }}
                       ></div>
@@ -228,7 +439,7 @@ function App() {
         )}
 
         {activeTab === 'schedule' && (
-          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { 
                 title: "🔵 Rute 1 - Utara", 
@@ -250,10 +461,10 @@ function App() {
               },
               { 
                 title: "🟢 Rute 3 - Timur", 
-                color:  "green", 
-                route:  "Terminal → FKM → FIB → Vokasi", 
+                color: "green", 
+                route: "Terminal → FKM → FIB → Vokasi", 
                 time: "07:00 - 17:00", 
-                freq:  "25 menit", 
+                freq: "25 menit", 
                 fakultas: "Kesehatan, Budaya, Vokasi",
                 halte: ["Terminal Tembalang", "FKM", "FIB", "Vokasi"]
               },
@@ -271,7 +482,7 @@ function App() {
                 <h3 className="text-lg font-bold mb-4 text-gray-700">{route.title}</h3>
                 <div className="space-y-3 text-sm">
                   <p><strong>🛣️ Rute:</strong> {route.route}</p>
-                  <p><strong>🏫 Melayani:</strong> {route. fakultas}</p>
+                  <p><strong>🏫 Melayani:</strong> {route.fakultas}</p>
                   <p><strong>🕐 Operasional:</strong> {route.time}</p>
                   <p><strong>⏱️ Frekuensi:</strong> Setiap {route.freq}</p>
                   <div>
@@ -296,7 +507,7 @@ function App() {
       {showProfile && (
         <div 
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" 
-          style={{ zIndex:  9999 }}
+          style={{ zIndex: 9999 }}
           onClick={() => setShowProfile(false)}
         >
           <div 
@@ -310,7 +521,7 @@ function App() {
               </h2>
               <div className="flex gap-2">
                 <button 
-                  onClick={() => setIsEditingProfile(! isEditingProfile)}
+                  onClick={() => setIsEditingProfile(!isEditingProfile)}
                   className={`px-3 py-1 rounded text-sm transition-colors ${
                     isEditingProfile 
                       ? 'bg-gray-500 text-white hover:bg-gray-600' 
@@ -350,12 +561,12 @@ function App() {
                   )}
                 </div>
                 
-                {isEditingProfile ?  (
+                {isEditingProfile ? (
                   <div className="space-y-3">
                     <input
                       type="text"
                       value={editData.name}
-                      onChange={(e) => setEditData({... editData, name: e.target.value})}
+                      onChange={(e) => setEditData({...editData, name: e.target.value})}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Nama Lengkap"
                     />
@@ -367,10 +578,11 @@ function App() {
                       placeholder="NIM"
                     />
                     <select
-                      value={editData. jurusan}
-                      onChange={(e) => setEditData({... editData, jurusan: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus: ring-blue-500 focus: border-transparent"
+                      value={editData.jurusan}
+                      onChange={(e) => setEditData({...editData, jurusan: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2 text-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
+                      <option value="Teknik Komputer">Teknik Komputer</option>
                       <option value="Informatika">Informatika</option>
                       <option value="Matematika">Matematika</option>
                       <option value="Fisika">Fisika</option>
@@ -394,8 +606,8 @@ function App() {
                 )}
               </div>
               
-              {/* Statistics - UPDATED */}
-              {! isEditingProfile && (
+              {/* Statistics */}
+              {!isEditingProfile && (
                 <div className="border-t border-gray-200 pt-6">
                   <h4 className="font-bold mb-4 flex items-center gap-2 text-gray-700">📊 Statistik Bulan Ini</h4>
                   <div className="grid grid-cols-3 gap-4">
@@ -405,7 +617,7 @@ function App() {
                       <div className="text-xs text-blue-500 mt-1">🚌</div>
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-xl border border-green-200">
-                      <div className="text-2xl font-bold text-green-600 mb-1">8. 5</div>
+                      <div className="text-2xl font-bold text-green-600 mb-1">8.5</div>
                       <div className="text-xs text-gray-600 font-medium">Jam Hemat</div>
                       <div className="text-xs text-green-500 mt-1">⏱️</div>
                     </div>
@@ -417,7 +629,7 @@ function App() {
                   </div>
                   <div className="mt-4 bg-gradient-to-r from-green-50 to-blue-50 p-3 rounded-lg border border-green-200">
                     <p className="text-xs text-center text-green-700 font-medium">
-                      🏆 Eco Warrior Badge!  Kamu udah hemat 12kg emisi CO₂ bulan ini! 
+                      🏆 Eco Warrior Badge! Kamu udah hemat 12kg emisi CO₂ bulan ini!
                     </p>
                   </div>
                 </div>

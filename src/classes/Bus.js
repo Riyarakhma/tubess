@@ -1,4 +1,3 @@
-// Child Class - Bus (Inheritance dari Vehicle)
 import { Vehicle } from './Vehicle.js';
 import { ValidationError } from './Exceptions.js';
 
@@ -8,10 +7,9 @@ export class Bus extends Vehicle {
     this.routeId = routeId;
     this.capacity = capacity;
     this.currentPassengers = currentPassengers;
-    this.history = []; // Track movement history
+    this.history = []; 
   }
   
-  // Override method dari parent (Polymorphism)
   getInfo() {
     return `Bus ${this.id} - Route ${this.routeId} - ${this.currentPassengers}/${this.capacity} passengers`;
   }
