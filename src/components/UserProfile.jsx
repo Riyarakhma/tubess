@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 const UserProfile = ({ onClose }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [userInfo, setUserInfo] = useState({
-    name: "Ahmad Mahasiswa",
-    nim: "24020122140001",
-    fakultas: "Sains & Matematika",
-    jurusan:  "Informatika",
-    email: "ahmad.mhs@students.undip.ac.id",
+    name: "biell rhma yasmin",
+    nim: "211201231401",
+    fakultas: "Fakultas Teknik",
+    jurusan: "Teknik Komputer", 
+    email: "tekkom@students.undip.ac.id",
     phone: "081234567890",
     foto: "https://ui-avatars.com/api/? name=Ahmad+Mahasiswa&background=4F46E5&color=fff&size=200&bold=true"
   })

@@ -11,11 +11,11 @@ function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [userProfile, setUserProfile] = useState({
-    name: "Ahmad Mahasiswa",
-    nim: "24020122140001",
-    fakultas: "Sains & Matematika", 
-    jurusan: "Informatika",
-    email: "ahmad.mhs@students.undip.ac.id",
+    name: "biell rhma yasmin",
+    nim: "211201231401",
+    fakultas: "Teknik", 
+    jurusan: "Teknik Komputer",
+    email: "tekkom@students.undip.ac.id",
     phone: "081234567890",
     alamat: "Jl. Prof. Soedarto, Tembalang, Semarang",
     foto: "https://via.placeholder.com/80/4F46E5/FFFFFF?text=AM"
